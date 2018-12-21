@@ -49,9 +49,6 @@ const (
 	// DefaultAttempt is a default attempt prefix of PodSandbox or container
 	DefaultAttempt uint32 = 2
 
-	// DefaultContainerImage is the default image for container using
-	DefaultContainerImage string = "busybox:1.28"
-
 	// DefaultStopContainerTimeout is the default timeout for stopping container
 	DefaultStopContainerTimeout int64 = 60
 )
@@ -132,6 +129,7 @@ func RunDefaultPodSandbox(c internalapi.RuntimeService, prefix string) string {
 	config := &runtimeapi.PodSandboxConfig{
 		Metadata: BuildPodSandboxMetadata(podSandboxName, uid, namespace, DefaultAttempt),
 		Linux:    &runtimeapi.LinuxPodSandboxConfig{},
+		Labels:   DefaultPodLabels,
 	}
 	return RunPodSandbox(c, config)
 }
@@ -161,6 +159,7 @@ func CreatePodSandboxForContainer(c internalapi.RuntimeService) (string, *runtim
 	config := &runtimeapi.PodSandboxConfig{
 		Metadata: BuildPodSandboxMetadata(podSandboxName, uid, namespace, DefaultAttempt),
 		Linux:    &runtimeapi.LinuxPodSandboxConfig{},
+		Labels:   DefaultPodLabels,
 	}
 
 	podID := RunPodSandbox(c, config)
@@ -181,7 +180,7 @@ func CreateDefaultContainer(rc internalapi.RuntimeService, ic internalapi.ImageM
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: BuildContainerMetadata(containerName, DefaultAttempt),
 		Image:    &runtimeapi.ImageSpec{Image: DefaultContainerImage},
-		Command:  []string{"top"},
+		Command:  DefaultContainerCommand,
 		Linux:    &runtimeapi.LinuxContainerConfig{},
 	}
 

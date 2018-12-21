@@ -818,6 +818,7 @@ func createNamespacePodSandbox(rc internalapi.RuntimeService, podSandboxNamespac
 			},
 		},
 		LogDirectory: podLogPath,
+		Labels:       framework.DefaultPodLabels,
 	}
 
 	return framework.RunPodSandbox(rc, config), config
@@ -888,6 +889,7 @@ func createPrivilegedPodSandbox(rc internalapi.RuntimeService, privileged bool) 
 				Privileged: privileged,
 			},
 		},
+		Labels: framework.DefaultPodLabels,
 	}
 
 	return framework.RunPodSandbox(rc, config), config
@@ -1022,6 +1024,7 @@ func seccompTestContainer(rc internalapi.RuntimeService, ic internalapi.ImageMan
 				SeccompProfilePath: seccompProfile,
 			},
 		},
+		Labels: framework.DefaultPodLabels,
 	}
 	podID := framework.RunPodSandbox(rc, podConfig)
 

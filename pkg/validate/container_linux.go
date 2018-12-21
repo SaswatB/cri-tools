@@ -31,6 +31,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	echoHelloCmd  = []string{"echo", "hello"}
+	sleepCmd      = []string{"sleep", "4321"}
+	checkSleepCmd = []string{"sh", "-c", "pgrep sleep || true"}
+)
+
 var _ = framework.KubeDescribe("Container Mount Propagation", func() {
 	f := framework.NewDefaultCRIFramework()
 

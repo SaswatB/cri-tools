@@ -126,9 +126,8 @@ var _ = framework.KubeDescribe("Container", func() {
 			startContainer(rc, containerID)
 
 			By("test execSync")
-			cmd := []string{"echo", "hello"}
 			expectedLogMessage := "hello\n"
-			verifyExecSyncOutput(rc, containerID, cmd, expectedLogMessage)
+			verifyExecSyncOutput(rc, containerID, echoHelloCmd, expectedLogMessage)
 		})
 
 		It("runtime should support execSync with timeout [Conformance]", func() {
@@ -139,13 +138,11 @@ var _ = framework.KubeDescribe("Container", func() {
 			startContainer(rc, containerID)
 
 			By("test execSync with timeout")
-			sleepCmd := []string{"sleep", "4321"}
 			_, _, err := rc.ExecSync(containerID, sleepCmd, time.Second)
 			Expect(err).Should(HaveOccurred(), "execSync should timeout")
 
 			By("timeout exec process should be gone")
-			checkCmd := []string{"sh", "-c", "pgrep sleep || true"}
-			stdout, stderr, err := rc.ExecSync(containerID, checkCmd, time.Second)
+			stdout, stderr, err := rc.ExecSync(containerID, checkSleepCmd, time.Second)
 			framework.ExpectNoError(err)
 			Expect(stderr).To(BeEmpty())
 			Expect(strings.TrimSpace(string(stdout))).To(BeEmpty())
