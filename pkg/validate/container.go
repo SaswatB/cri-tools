@@ -444,7 +444,7 @@ func createLogContainer(rc internalapi.RuntimeService, ic internalapi.ImageManag
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
 		Image:    &runtimeapi.ImageSpec{Image: framework.DefaultContainerImage},
-		Command:  []string{"echo", defaultLog},
+		Command:  logDefaultCmd,
 		LogPath:  path,
 	}
 	return containerConfig.LogPath, framework.CreateContainer(rc, ic, containerConfig, podID, podConfig)
@@ -458,7 +458,7 @@ func createKeepLoggingContainer(rc internalapi.RuntimeService, ic internalapi.Im
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
 		Image:    &runtimeapi.ImageSpec{Image: framework.DefaultContainerImage},
-		Command:  []string{"sh", "-c", "while true; do echo " + defaultLog + "; sleep 1; done"},
+		Command:  loopLogDefaultCmd,
 		LogPath:  path,
 	}
 	return containerConfig.LogPath, framework.CreateContainer(rc, ic, containerConfig, podID, podConfig)

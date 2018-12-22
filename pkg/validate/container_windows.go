@@ -17,11 +17,13 @@ limitations under the License.
 package validate
 
 var (
-	echoHelloCmd  = []string{"powershell", "-c", "echo hello"}
-	sleepCmd      = []string{"powershell", "-c", "sleep", "4321"}
-	checkSleepCmd = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
-	shellCmd      = []string{"cmd", "/Q"}
-	pauseCmd      = []string{"powershell", "-c", "ping -t localhost"}
+	echoHelloCmd      = []string{"powershell", "-c", "echo hello"}
+	sleepCmd          = []string{"powershell", "-c", "sleep", "4321"}
+	checkSleepCmd     = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
+	shellCmd          = []string{"cmd", "/Q"}
+	pauseCmd          = []string{"powershell", "-c", "ping -t localhost"}
+	logDefaultCmd     = []string{"powershell", "/c", "echo '" + defaultLog + "'"}
+	loopLogDefaultCmd = []string{"powershell", "/c", "while($true) { echo '" + defaultLog + "'; sleep 1; }"}
 )
 
 const (

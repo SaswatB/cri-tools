@@ -32,11 +32,13 @@ import (
 )
 
 var (
-	echoHelloCmd  = []string{"echo", "hello"}
-	sleepCmd      = []string{"sleep", "4321"}
-	checkSleepCmd = []string{"sh", "-c", "pgrep sleep || true"}
-	shellCmd      = []string{"/bin/sh"}
-	pauseCmd      = []string{"sh", "-c", "top"}
+	echoHelloCmd      = []string{"echo", "hello"}
+	sleepCmd          = []string{"sleep", "4321"}
+	checkSleepCmd     = []string{"sh", "-c", "pgrep sleep || true"}
+	shellCmd          = []string{"/bin/sh"}
+	pauseCmd          = []string{"sh", "-c", "top"}
+	logDefaultCmd     = []string{"echo", defaultLog}
+	loopLogDefaultCmd = []string{"sh", "-c", "while true; do echo " + defaultLog + "; sleep 1; done"}
 )
 
 const (
