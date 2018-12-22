@@ -76,14 +76,14 @@ var _ = framework.KubeDescribe("Streaming", func() {
 
 			execReq := &runtimeapi.ExecRequest{
 				ContainerId: containerID,
-				Cmd:         []string{"echo", "hello"},
+				Cmd:         echoHelloCmd,
 				Stdout:      true,
 				Stderr:      true,
 			}
 			req := createExec(rc, execReq)
 
 			By("check the output of exec")
-			checkExec(rc, req, "hello\n", false)
+			checkExec(rc, req, echoHelloOutput, true, false)
 		})
 
 		It("runtime should support exec with tty=true and stdin=true [Conformance]", func() {
@@ -97,7 +97,7 @@ var _ = framework.KubeDescribe("Streaming", func() {
 
 			execReq := &runtimeapi.ExecRequest{
 				ContainerId: containerID,
-				Cmd:         []string{"echo", "hello"},
+				Cmd:         echoHelloCmd,
 				Stdout:      true,
 				Tty:         true,
 				Stdin:       true,
@@ -105,7 +105,7 @@ var _ = framework.KubeDescribe("Streaming", func() {
 			req := createExec(rc, execReq)
 
 			By("check the output of exec")
-			checkExec(rc, req, "hello\r\n", true)
+			checkExec(rc, req, "hello", false, true)
 		})
 
 		It("runtime should support attach [Conformance]", func() {
@@ -178,7 +178,7 @@ func createExec(c internalapi.RuntimeService, execReq *runtimeapi.ExecRequest) s
 	return resp.Url
 }
 
-func checkExec(c internalapi.RuntimeService, execServerURL, stdout string, isTty bool) {
+func checkExec(c internalapi.RuntimeService, execServerURL, stdout string, stdoutExactMatch bool, isTty bool) {
 	localOut := &safeBuffer{buffer: bytes.Buffer{}}
 	localErr := &safeBuffer{buffer: bytes.Buffer{}}
 	localInRead, localInWrite := io.Pipe()
@@ -215,7 +215,11 @@ func checkExec(c internalapi.RuntimeService, execServerURL, stdout string, isTty
 	err = e.Stream(streamOptions)
 	framework.ExpectNoError(err, "failed to open streamer for %q", execServerURL)
 
-	Expect(localOut.String()).To(Equal(stdout), "The stdout of exec should be "+stdout)
+	if stdoutExactMatch {
+		Expect(localOut.String()).To(Equal(stdout), "The stdout of exec should be "+stdout)
+	} else {
+		Expect(localOut.String()).To(ContainSubstring(stdout), "The stdout of exec should contain "+stdout)
+	}
 	Expect(localErr.String()).To(BeEmpty(), "The stderr of exec should be empty")
 	framework.Logf("Check exec url %q succeed", execServerURL)
 }
@@ -287,10 +291,10 @@ func checkAttach(c internalapi.RuntimeService, attachServerURL string) {
 		writer.Write([]byte("echo hello\n"))
 		Eventually(func() string {
 			return localOut.String()
-		}, time.Minute, time.Second).Should(Equal("hello\n"), "The stdout of attach should be hello")
+		}, time.Minute, time.Second).Should(Equal(attachEchoHelloOutput), "The stdout of attach should be hello")
 		Consistently(func() string {
 			return localOut.String()
-		}, 3*time.Second, time.Second).Should(Equal("hello\n"), "The stdout of attach should not contain other things")
+		}, 3*time.Second, time.Second).Should(Equal(attachEchoHelloOutput), "The stdout of attach should not contain other things")
 	}()
 
 	// Only http is supported now.

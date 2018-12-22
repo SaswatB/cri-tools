@@ -35,6 +35,11 @@ var (
 	echoHelloCmd  = []string{"echo", "hello"}
 	sleepCmd      = []string{"sleep", "4321"}
 	checkSleepCmd = []string{"sh", "-c", "pgrep sleep || true"}
+	shellCmd      = []string{"/bin/sh"},
+)
+
+const (
+	echoHelloOutput = "hello\n"
 )
 
 var _ = framework.KubeDescribe("Container Mount Propagation", func() {

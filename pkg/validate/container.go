@@ -41,7 +41,7 @@ type streamType string
 
 const (
 	defaultStopContainerTimeout int64      = 60
-	defaultExecSyncTimeout      int64      = 5
+	defaultExecSyncTimeout      int64      = 30
 	defaultLog                  string     = "hello World"
 	stdoutType                  streamType = "stdout"
 	stderrType                  streamType = "stderr"
@@ -126,8 +126,7 @@ var _ = framework.KubeDescribe("Container", func() {
 			startContainer(rc, containerID)
 
 			By("test execSync")
-			expectedLogMessage := "hello\n"
-			verifyExecSyncOutput(rc, containerID, echoHelloCmd, expectedLogMessage)
+			verifyExecSyncOutput(rc, containerID, echoHelloCmd, echoHelloOutput)
 		})
 
 		It("runtime should support execSync with timeout [Conformance]", func() {
@@ -297,7 +296,7 @@ func createShellContainer(rc internalapi.RuntimeService, ic internalapi.ImageMan
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata:  framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
 		Image:     &runtimeapi.ImageSpec{Image: framework.DefaultContainerImage},
-		Command:   []string{"/bin/sh"},
+		Command:   shellCmd,
 		Linux:     &runtimeapi.LinuxContainerConfig{},
 		Stdin:     true,
 		StdinOnce: true,

@@ -20,4 +20,9 @@ var (
 	echoHelloCmd  = []string{"powershell", "-c", "echo hello"}
 	sleepCmd      = []string{"powershell", "-c", "sleep", "4321"}
 	checkSleepCmd = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
+	shellCmd      = []string{"cmd", "/Q"}
+)
+
+const (
+	echoHelloOutput = "hello\r\n"
 )
