@@ -36,6 +36,7 @@ var (
 	sleepCmd      = []string{"sleep", "4321"}
 	checkSleepCmd = []string{"sh", "-c", "pgrep sleep || true"}
 	shellCmd      = []string{"/bin/sh"}
+	pauseCmd      = []string{"sh", "-c", "top"}
 )
 
 const (
@@ -230,7 +231,7 @@ func createMountPropagationContainer(rc internalapi.RuntimeService, ic internala
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
 		Image:    &runtimeapi.ImageSpec{Image: framework.DefaultContainerImage},
-		Command:  []string{"sh", "-c", "top"},
+		Command:  pauseCmd,
 		// Set Privileged in order to executing mount command in container
 		Linux: &runtimeapi.LinuxContainerConfig{
 			SecurityContext: &runtimeapi.LinuxContainerSecurityContext{

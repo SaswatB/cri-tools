@@ -423,7 +423,7 @@ func createVolumeContainer(rc internalapi.RuntimeService, ic internalapi.ImageMa
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
 		Image:    &runtimeapi.ImageSpec{Image: framework.DefaultContainerImage},
-		Command:  []string{"sh", "-c", "top"},
+		Command:  pauseCmd,
 		// mount host path to the same directory in container, and will check if hostPath isn't empty
 		Mounts: []*runtimeapi.Mount{
 			{

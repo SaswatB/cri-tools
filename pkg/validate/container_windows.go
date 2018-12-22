@@ -21,6 +21,7 @@ var (
 	sleepCmd      = []string{"powershell", "-c", "sleep", "4321"}
 	checkSleepCmd = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
 	shellCmd      = []string{"cmd", "/Q"}
+	pauseCmd      = []string{"powershell", "-c", "ping -t localhost"}
 )
 
 const (
