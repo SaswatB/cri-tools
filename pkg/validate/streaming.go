@@ -128,21 +128,21 @@ var _ = framework.KubeDescribe("Streaming", func() {
 			var podConfig *runtimeapi.PodSandboxConfig
 			portMappings := []*runtimeapi.PortMapping{
 				{
-					ContainerPort: nginxContainerPort,
+					ContainerPort: webServerContainerPort,
 				},
 			}
 			podID, podConfig = createPodSandboxWithPortMapping(rc, portMappings, false)
 
-			By("create a nginx container")
-			containerID := createNginxContainer(rc, ic, podID, podConfig, "container-for-portforward-test")
+			By("create a web server container")
+			containerID := createWebServerContainer(rc, ic, podID, podConfig, "container-for-portforward-test")
 
-			By("start the nginx container")
+			By("start the web server container")
 			startContainer(rc, containerID)
 
 			req := createDefaultPortForward(rc, podID)
 
 			By("check the output of portforward")
-			checkPortForward(rc, req, nginxHostPortForPortForward, nginxContainerPort)
+			checkPortForward(rc, req, webServerHostPortForPortForward, webServerContainerPort)
 		})
 
 		It("runtime should support portforward in host network", func() {
@@ -150,21 +150,21 @@ var _ = framework.KubeDescribe("Streaming", func() {
 			var podConfig *runtimeapi.PodSandboxConfig
 			portMappings := []*runtimeapi.PortMapping{
 				{
-					ContainerPort: nginxHostNetContainerPort,
+					ContainerPort: webServerHostNetContainerPort,
 				},
 			}
 			podID, podConfig = createPodSandboxWithPortMapping(rc, portMappings, true)
 
-			By("create a nginx container")
-			containerID := createHostNetNginxContainer(rc, ic, podID, podConfig, "container-for-host-net-portforward-test")
+			By("create a web server container")
+			containerID := createHostNetWebServerContainer(rc, ic, podID, podConfig, "container-for-host-net-portforward-test")
 
-			By("start the nginx container")
+			By("start the web server container")
 			startContainer(rc, containerID)
 
 			req := createDefaultPortForward(rc, podID)
 
 			By("check the output of portforward")
-			checkPortForward(rc, req, nginxHostPortForHostNetPortFroward, nginxHostNetContainerPort)
+			checkPortForward(rc, req, webServerHostPortForHostNetPortFroward, webServerHostNetContainerPort)
 		})
 
 	})

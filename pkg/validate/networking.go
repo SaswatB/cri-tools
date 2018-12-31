@@ -30,19 +30,16 @@ import (
 )
 
 const (
-	defaultDNSServer   string = "10.10.10.10"
-	defaultDNSSearch   string = "google.com"
-	defaultDNSOption   string = "ndots:8"
-	resolvConfigPath   string = "/etc/resolv.conf"
-	nginxImage         string = "nginx"
-	hostNetNginxImage  string = "gcr.io/cri-tools/hostnet-nginx"
-	nginxContainerPort int32  = 80
+	defaultDNSServer       string = "10.10.10.10"
+	defaultDNSSearch       string = "google.com"
+	defaultDNSOption       string = "ndots:8"
+	webServerContainerPort int32  = 80
 	// The following host ports must not be in-use when running the test.
-	nginxHostPortForPortMapping        int32 = 12000
-	nginxHostPortForPortForward        int32 = 12001
-	nginxHostPortForHostNetPortFroward int32 = 12002
+	webServerHostPortForPortMapping        int32 = 12000
+	webServerHostPortForPortForward        int32 = 12001
+	webServerHostPortForHostNetPortFroward int32 = 12002
 	// The port used in hostNetNginxImage (See images/hostnet-nginx/)
-	nginxHostNetContainerPort int32 = 12003
+	webServerHostNetContainerPort int32 = 12003
 )
 
 var _ = framework.KubeDescribe("Networking", func() {
@@ -91,15 +88,15 @@ var _ = framework.KubeDescribe("Networking", func() {
 			var podConfig *runtimeapi.PodSandboxConfig
 			portMappings := []*runtimeapi.PortMapping{
 				{
-					ContainerPort: nginxContainerPort,
+					ContainerPort: webServerContainerPort,
 				},
 			}
 			podID, podConfig = createPodSandboxWithPortMapping(rc, portMappings, false)
 
-			By("create a nginx container")
-			containerID := createNginxContainer(rc, ic, podID, podConfig, "container-for-container-port")
+			By("create a web server container")
+			containerID := createWebServerContainer(rc, ic, podID, podConfig, "container-for-container-port")
 
-			By("start the nginx container")
+			By("start the web server container")
 			startContainer(rc, containerID)
 
 			By("check the port mapping with only container port")
@@ -111,20 +108,20 @@ var _ = framework.KubeDescribe("Networking", func() {
 			var podConfig *runtimeapi.PodSandboxConfig
 			portMappings := []*runtimeapi.PortMapping{
 				{
-					ContainerPort: nginxContainerPort,
-					HostPort:      nginxHostPortForPortMapping,
+					ContainerPort: webServerContainerPort,
+					HostPort:      webServerHostPortForPortMapping,
 				},
 			}
 			podID, podConfig = createPodSandboxWithPortMapping(rc, portMappings, false)
 
-			By("create a nginx container")
-			containerID := createNginxContainer(rc, ic, podID, podConfig, "container-for-host-port")
+			By("create a web server container")
+			containerID := createWebServerContainer(rc, ic, podID, podConfig, "container-for-host-port")
 
-			By("start the nginx container")
+			By("start the web server container")
 			startContainer(rc, containerID)
 
 			By("check the port mapping with host port and container port")
-			checkMainPage(rc, "", nginxHostPortForPortMapping)
+			checkMainPage(rc, "", webServerHostPortForPortMapping)
 		})
 	})
 })
@@ -174,9 +171,9 @@ func createPodSandboxWithPortMapping(c internalapi.RuntimeService, portMappings 
 
 // checkDNSConfig checks the content of /etc/resolv.conf.
 func checkDNSConfig(c internalapi.RuntimeService, containerID string, expectedContent []string) {
-	By("get the content of /etc/resolv.conf via execSync")
-	cmd := []string{"cat", resolvConfigPath}
-	stdout, stderr, err := c.ExecSync(containerID, cmd, time.Duration(defaultExecSyncTimeout)*time.Second)
+	By("get the current dns config via execSync")
+	time.Sleep(100 * time.Second)
+	stdout, stderr, err := c.ExecSync(containerID, getDNSConfigCmd, time.Duration(defaultExecSyncTimeout)*time.Second)
 	framework.ExpectNoError(err, "failed to execSync in container %q", containerID)
 	for _, content := range expectedContent {
 		Expect(string(stdout)).To(ContainSubstring(content), "The stdout output of execSync should contain %q", content)
@@ -185,23 +182,23 @@ func checkDNSConfig(c internalapi.RuntimeService, containerID string, expectedCo
 	framework.Logf("check DNS config succeed")
 }
 
-// createNginxContainer creates a  nginx container.
-func createNginxContainer(rc internalapi.RuntimeService, ic internalapi.ImageManagerService, podID string, podConfig *runtimeapi.PodSandboxConfig, prefix string) string {
+// createWebServerContainer creates a container running a web server
+func createWebServerContainer(rc internalapi.RuntimeService, ic internalapi.ImageManagerService, podID string, podConfig *runtimeapi.PodSandboxConfig, prefix string) string {
 	containerName := prefix + framework.NewUUID()
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
-		Image:    &runtimeapi.ImageSpec{Image: nginxImage},
+		Image:    &runtimeapi.ImageSpec{Image: webServerImage},
 		Linux:    &runtimeapi.LinuxContainerConfig{},
 	}
 	return framework.CreateContainer(rc, ic, containerConfig, podID, podConfig)
 }
 
-// createHostNetNginxContainer creates a nginx container using nginxHostNetContainerPort.
-func createHostNetNginxContainer(rc internalapi.RuntimeService, ic internalapi.ImageManagerService, podID string, podConfig *runtimeapi.PodSandboxConfig, prefix string) string {
+// createHostNetWebServerContainer creates a web server container using webServerHostNetContainerPort.
+func createHostNetWebServerContainer(rc internalapi.RuntimeService, ic internalapi.ImageManagerService, podID string, podConfig *runtimeapi.PodSandboxConfig, prefix string) string {
 	containerName := prefix + framework.NewUUID()
 	containerConfig := &runtimeapi.ContainerConfig{
 		Metadata: framework.BuildContainerMetadata(containerName, framework.DefaultAttempt),
-		Image:    &runtimeapi.ImageSpec{Image: hostNetNginxImage},
+		Image:    &runtimeapi.ImageSpec{Image: hostNetWebServerImage},
 		Linux:    &runtimeapi.LinuxContainerConfig{},
 	}
 	return framework.CreateContainer(rc, ic, containerConfig, podID, podConfig)
@@ -220,7 +217,7 @@ func checkMainPage(c internalapi.RuntimeService, podID string, hostPort int32) {
 		status := getPodSandboxStatus(c, podID)
 		Expect(status.GetNetwork()).NotTo(BeNil(), "The network in status should not be nil.")
 		Expect(status.GetNetwork().Ip).NotTo(BeNil(), "The IP should not be nil.")
-		url += status.GetNetwork().Ip + ":" + strconv.Itoa(int(nginxContainerPort))
+		url += status.GetNetwork().Ip + ":" + strconv.Itoa(int(webServerContainerPort))
 	}
 	framework.Logf("the IP:port is " + url)
 
