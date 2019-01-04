@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -47,6 +48,37 @@ const (
 	stderrType                  streamType = "stderr"
 )
 
+var (
+	echoHelloCmd      []string
+	sleepCmd          []string
+	checkSleepCmd     []string
+	shellCmd          []string
+	pauseCmd          []string
+	logDefaultCmd     []string
+	loopLogDefaultCmd []string
+	echoHelloOutput   string
+
+	// Linux defaults
+	echoHelloLinuxCmd      = []string{"echo", "hello"}
+	sleepLinuxCmd          = []string{"sleep", "4321"}
+	checkSleepLinuxCmd     = []string{"sh", "-c", "pgrep sleep || true"}
+	shellLinuxCmd          = []string{"/bin/sh"}
+	pauseLinuxCmd          = []string{"sh", "-c", "top"}
+	logDefaultLinuxCmd     = []string{"echo", defaultLog}
+	loopLogDefaultLinuxCmd = []string{"sh", "-c", "while true; do echo " + defaultLog + "; sleep 1; done"}
+	echoHelloLinuxOutput   = "hello\n"
+
+	// Windows defaults
+	echoHelloWindowsCmd      = []string{"powershell", "-c", "echo hello"}
+	sleepWindowsCmd          = []string{"powershell", "-c", "sleep", "4321"}
+	checkSleepWindowsCmd     = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
+	shellWindowsCmd          = []string{"cmd", "/Q"}
+	pauseWindowsCmd          = []string{"powershell", "-c", "ping -t localhost"}
+	logDefaultWindowsCmd     = []string{"powershell", "/c", "echo '" + defaultLog + "'"}
+	loopLogDefaultWindowsCmd = []string{"powershell", "/c", "while($true) { echo '" + defaultLog + "'; sleep 1; }"}
+	echoHelloWindowsOutput   = "hello\r\n"
+)
+
 // logMessage is the internal log type.
 type logMessage struct {
 	timestamp time.Time
@@ -56,6 +88,28 @@ type logMessage struct {
 
 var _ = framework.KubeDescribe("Container", func() {
 	f := framework.NewDefaultCRIFramework()
+
+	framework.AddBeforeSuiteCallback(func() {
+		if runtime.GOOS != "windows" || framework.TestContext.IsLcow {
+			echoHelloCmd = echoHelloLinuxCmd
+			sleepCmd = sleepLinuxCmd
+			checkSleepCmd = checkSleepLinuxCmd
+			shellCmd = shellLinuxCmd
+			pauseCmd = pauseLinuxCmd
+			logDefaultCmd = logDefaultLinuxCmd
+			loopLogDefaultCmd = loopLogDefaultLinuxCmd
+			echoHelloOutput = echoHelloLinuxOutput
+		} else {
+			echoHelloCmd = echoHelloWindowsCmd
+			sleepCmd = sleepWindowsCmd
+			checkSleepCmd = checkSleepWindowsCmd
+			shellCmd = shellWindowsCmd
+			pauseCmd = pauseWindowsCmd
+			logDefaultCmd = logDefaultWindowsCmd
+			loopLogDefaultCmd = loopLogDefaultWindowsCmd
+			echoHelloOutput = echoHelloWindowsOutput
+		}
+	})
 
 	var rc internalapi.RuntimeService
 	var ic internalapi.ImageManagerService

@@ -18,6 +18,7 @@ package framework
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +38,45 @@ var (
 
 	// lastUUID record last generated uuid from NewUUID()
 	lastUUID uuid.UUID
+
+	// the callbacks to run during BeforeSuite
+	beforeSuiteCallbacks []func()
+
+	// DefaultPodLabels are labels used by default in pods
+	DefaultPodLabels map[string]string
+
+	// DefaultContainerImage is the default image used for containers
+	DefaultContainerImage string
+
+	// DefaultContainerCommand is the default command used for containers
+	DefaultContainerCommand []string
+
+	// DefaultLinuxPodLabels default pod labels for Linux
+	DefaultLinuxPodLabels = map[string]string{}
+
+	// DefaultLinuxContainerCommand default container command for Linux
+	DefaultLinuxContainerCommand = []string{"top"}
+
+	// DefaultLcowPodLabels default pod labels for Linux containers on Windows
+	DefaultLcowPodLabels = map[string]string{
+		"sandbox-platform":  "linux/amd64",
+		"sandbox-isolation": "process",
+	}
+
+	// DefaultWindowsPodLabels default pod labels for Windows
+	DefaultWindowsPodLabels = map[string]string{
+		"sandbox-platform":  "windows/amd64",
+		"sandbox-isolation": "process",
+	}
+
+	// DefaultWindowsPodLabels default pod labels for Windows
+	DefaultHyperVPodLabels = map[string]string{
+		"sandbox-platform":  "windows/amd64",
+		"sandbox-isolation": "hyperv",
+	}
+
+	// DefaultWindowsContainerCommand default container command for Windows
+	DefaultWindowsContainerCommand = []string{"cmd", "/c", "ping -t localhost"}
 )
 
 const (
@@ -51,7 +91,43 @@ const (
 
 	// DefaultStopContainerTimeout is the default timeout for stopping container
 	DefaultStopContainerTimeout int64 = 60
+
+	// DefaultLinuxContainerImage default container image for Linux
+	DefaultLinuxContainerImage string = "busybox:1.28"
+
+	// DefaultWindowsContainerImage default container image for Windows
+	DefaultWindowsContainerImage string = "mcr.microsoft.com/windows/servercore:ltsc2019"
 )
+
+// Set the constants based on operating system and flags
+var _ = BeforeSuite(func() {
+	if runtime.GOOS != "windows" || TestContext.IsLcow {
+		DefaultPodLabels = DefaultLinuxPodLabels
+		DefaultContainerImage = DefaultLinuxContainerImage
+		DefaultContainerCommand = DefaultLinuxContainerCommand
+
+		if TestContext.IsLcow {
+			DefaultPodLabels = DefaultLcowPodLabels
+		}
+	} else {
+		DefaultPodLabels = DefaultWindowsPodLabels
+		DefaultContainerImage = DefaultWindowsContainerImage
+		DefaultContainerCommand = DefaultWindowsContainerCommand
+
+		if TestContext.IsHyperV {
+			DefaultPodLabels = DefaultHyperVPodLabels
+		}
+	}
+
+	for _, callback := range beforeSuiteCallbacks {
+		callback()
+	}
+})
+
+// AddBeforeSuiteCallback adds a callback to run during BeforeSuite
+func AddBeforeSuiteCallback(callback func()) {
+	beforeSuiteCallbacks = append(beforeSuiteCallbacks, callback)
+}
 
 // LoadCRIClient creates a InternalAPIClient.
 func LoadCRIClient() (*InternalAPIClient, error) {

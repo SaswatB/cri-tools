@@ -18,6 +18,7 @@ package validate
 
 import (
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 )
 
 const (
+	resolvConfigPath              = "/etc/resolv.conf"
 	defaultDNSServer       string = "10.10.10.10"
 	defaultDNSSearch       string = "google.com"
 	defaultDNSOption       string = "ndots:8"
@@ -40,10 +42,42 @@ const (
 	webServerHostPortForHostNetPortFroward int32 = 12002
 	// The port used in hostNetNginxImage (See images/hostnet-nginx/)
 	webServerHostNetContainerPort int32 = 12003
+
+	// Linux defaults
+	webServerLinuxImage        = "nginx"
+	hostNetWebServerLinuxImage = "gcr.io/cri-tools/hostnet-nginx"
+
+	// Windows defaults
+	webServerWindowsImage        = "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019"
+	hostNetWebServerWindowsImage = "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019"
+)
+
+var (
+	webServerImage        string
+	hostNetWebServerImage string
+	getDNSConfigCmd       []string
+
+	// Linux defaults
+	getDNSConfigLinuxCmd = []string{"cat", resolvConfigPath}
+
+	// Windows defaults
+	getDNSConfigWindowsCmd = []string{"cmd", "/c", "\"powershell /c sleep 5; iex '(Get-NetIPConfiguration).DNSServer.ServerAddresses'\""}
 )
 
 var _ = framework.KubeDescribe("Networking", func() {
 	f := framework.NewDefaultCRIFramework()
+
+	framework.AddBeforeSuiteCallback(func() {
+		if runtime.GOOS != "windows" || framework.TestContext.IsLcow {
+			webServerImage = webServerLinuxImage
+			hostNetWebServerImage = hostNetWebServerLinuxImage
+			getDNSConfigCmd = getDNSConfigLinuxCmd
+		} else {
+			webServerImage = webServerWindowsImage
+			hostNetWebServerImage = hostNetWebServerWindowsImage
+			getDNSConfigCmd = getDNSConfigWindowsCmd
+		}
+	})
 
 	var rc internalapi.RuntimeService
 	var ic internalapi.ImageManagerService
