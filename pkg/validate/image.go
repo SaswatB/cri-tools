@@ -18,6 +18,7 @@ package validate
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 
 	"github.com/kubernetes-sigs/cri-tools/pkg/framework"
@@ -29,15 +30,6 @@ import (
 )
 
 const (
-	// image reference without
-	testImageWithoutTag = "gcr.io/cri-tools/test-image-latest"
-
-	// name-tagged reference for test image
-	testImageWithTag = "gcr.io/cri-tools/test-image-tag:test"
-
-	// digested reference for test image
-	testImageWithDigest = "gcr.io/cri-tools/test-image-digest@sha256:9179135b4b4cc5a8721e09379244807553c318d92fa3111a65133241551ca343"
-
 	testImageUserUID           = "gcr.io/cri-tools/test-image-user-uid"
 	imageUserUID               = int64(1002)
 	testImageUserUsername      = "gcr.io/cri-tools/test-image-user-username"
@@ -46,10 +38,77 @@ const (
 	imageUserUIDGroup          = int64(1003)
 	testImageUserUsernameGroup = "gcr.io/cri-tools/test-image-user-username-group"
 	imageUserUsernameGroup     = "www-data"
+
+	// Linux defaults
+	testLinuxImageWithoutTag = "gcr.io/cri-tools/test-image-latest"
+	testLinuxImageWithTag    = "gcr.io/cri-tools/test-image-tag:test"
+	testLinuxImageWithDigest = "gcr.io/cri-tools/test-image-digest@sha256:9179135b4b4cc5a8721e09379244807553c318d92fa3111a65133241551ca343"
+
+	// Windows defaults
+	testWindowsImageWithoutTag = "docker.io/saswatbmsft/win-test-image-latest"
+	testWindowsImageWithTag    = "docker.io/saswatbmsft/win-test-image-tag:test"
+	testWindowsImageWithDigest = "docker.io/saswatbmsft/win-test-image-digest@sha256:05c5e07eab041551e466d6e33a0a5649a23a929cd236391b2835ec79dc245090"
+)
+
+var (
+	// image reference without tag
+	testImageWithoutTag string
+
+	// name-tagged reference for test image
+	testImageWithTag string
+
+	// digested reference for test image
+	testImageWithDigest string
+
+	// image list where different tags refer to different images
+	testDifferentTagDifferentImageList []string
+
+	// image list where different tags refer to the same image
+	testDifferentTagSameImageList []string
+
+	// Linux defaults
+	testLinuxDifferentTagDifferentImageList = []string{
+		"gcr.io/cri-tools/test-image-1:latest",
+		"gcr.io/cri-tools/test-image-2:latest",
+		"gcr.io/cri-tools/test-image-3:latest",
+	}
+	testLinuxDifferentTagSameImageList = []string{
+		"gcr.io/cri-tools/test-image-tags:1",
+		"gcr.io/cri-tools/test-image-tags:2",
+		"gcr.io/cri-tools/test-image-tags:3",
+	}
+
+	// Windows defaults
+	testWindowsDifferentTagDifferentImageList = []string{
+		"docker.io/saswatbmsft/win-test-image-1:latest",
+		"docker.io/saswatbmsft/win-test-image-2:latest",
+		"docker.io/saswatbmsft/win-test-image-3:latest",
+	}
+	testWindowsDifferentTagSameImageList = []string{
+		"docker.io/saswatbmsft/win-test-image-tags:1",
+		"docker.io/saswatbmsft/win-test-image-tags:2",
+		"docker.io/saswatbmsft/win-test-image-tags:3",
+	}
 )
 
 var _ = framework.KubeDescribe("Image Manager", func() {
 	f := framework.NewDefaultCRIFramework()
+
+	framework.AddBeforeSuiteCallback(func() {
+		if runtime.GOOS != "windows" || framework.TestContext.IsLcow {
+			testImageWithoutTag = testLinuxImageWithoutTag
+			testImageWithTag = testLinuxImageWithTag
+			testImageWithDigest = testLinuxImageWithDigest
+			testDifferentTagDifferentImageList = testLinuxDifferentTagDifferentImageList
+			testDifferentTagSameImageList = testLinuxDifferentTagSameImageList
+		} else {
+			testImageWithoutTag = testWindowsImageWithoutTag
+			testImageWithTag = testWindowsImageWithTag
+			testImageWithDigest = testWindowsImageWithDigest
+			testDifferentTagDifferentImageList = testWindowsDifferentTagDifferentImageList
+			testDifferentTagSameImageList = testWindowsDifferentTagSameImageList
+		}
+	})
 
 	var c internalapi.ImageManagerService
 
@@ -76,62 +135,57 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 		})
 	})
 
-	It("image status get image fields should not have Uid|Username empty [Conformance]", func() {
-		for _, item := range []struct {
-			description string
-			image       string
-			uid         int64
-			username    string
-		}{
-			{
-				description: "UID only",
-				image:       testImageUserUID,
-				uid:         imageUserUID,
-				username:    "",
-			},
-			{
-				description: "Username only",
-				image:       testImageUserUsername,
-				uid:         int64(0),
-				username:    imageUserUsername,
-			},
-			{
-				description: "UID:group",
-				image:       testImageUserUIDGroup,
-				uid:         imageUserUIDGroup,
-				username:    "",
-			},
-			{
-				description: "Username:group",
-				image:       testImageUserUsernameGroup,
-				uid:         int64(0),
-				username:    imageUserUsernameGroup,
-			},
-		} {
-			framework.PullPublicImage(c, item.image)
-			defer removeImage(c, item.image)
+	if runtime.GOOS != "windows" || framework.TestContext.IsLcow {
+		It("image status get image fields should not have Uid|Username empty [Conformance]", func() {
+			for _, item := range []struct {
+				description string
+				image       string
+				uid         int64
+				username    string
+			}{
+				{
+					description: "UID only",
+					image:       testImageUserUID,
+					uid:         imageUserUID,
+					username:    "",
+				},
+				{
+					description: "Username only",
+					image:       testImageUserUsername,
+					uid:         int64(0),
+					username:    imageUserUsername,
+				},
+				{
+					description: "UID:group",
+					image:       testImageUserUIDGroup,
+					uid:         imageUserUIDGroup,
+					username:    "",
+				},
+				{
+					description: "Username:group",
+					image:       testImageUserUsernameGroup,
+					uid:         int64(0),
+					username:    imageUserUsernameGroup,
+				},
+			} {
+				framework.PullPublicImage(c, item.image)
+				defer removeImage(c, item.image)
 
-			status := framework.ImageStatus(c, item.image)
-			Expect(status.GetUid().GetValue()).To(Equal(item.uid), fmt.Sprintf("%s, Image Uid should be %d", item.description, item.uid))
-			Expect(status.GetUsername()).To(Equal(item.username), fmt.Sprintf("%s, Image Username should be %s", item.description, item.username))
-		}
-	})
+				status := framework.ImageStatus(c, item.image)
+				Expect(status.GetUid().GetValue()).To(Equal(item.uid), fmt.Sprintf("%s, Image Uid should be %d", item.description, item.uid))
+				Expect(status.GetUsername()).To(Equal(item.username), fmt.Sprintf("%s, Image Username should be %s", item.description, item.username))
+			}
+		})
+	}
 
 	It("listImage should get exactly 3 image in the result list [Conformance]", func() {
-		// different tags refer to different images
-		testImageList := []string{
-			"gcr.io/cri-tools/test-image-1:latest",
-			"gcr.io/cri-tools/test-image-2:latest",
-			"gcr.io/cri-tools/test-image-3:latest",
-		}
-
 		// Make sure test image does not exist.
-		removeImageList(c, testImageList)
-		ids := pullImageList(c, testImageList)
+		removeImageList(c, testDifferentTagDifferentImageList)
+		ids := pullImageList(c, testDifferentTagDifferentImageList)
 		ids = removeDuplicates(ids)
 		Expect(len(ids)).To(Equal(3), "3 image ids should be returned")
 
-		defer removeImageList(c, testImageList)
+		defer removeImageList(c, testDifferentTagDifferentImageList)
 
 		images := framework.ListImage(c, &runtimeapi.ImageFilter{})
 
@@ -139,7 +193,7 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 			for _, img := range images {
 				if img.Id == id {
 					Expect(len(img.RepoTags)).To(Equal(1), "Should only have 1 repo tag")
-					Expect(img.RepoTags[0]).To(Equal(testImageList[i]), "Repo tag should be correct")
+					Expect(img.RepoTags[0]).To(Equal(testDifferentTagDifferentImageList[i]), "Repo tag should be correct")
 					break
 				}
 			}
@@ -147,28 +201,21 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 	})
 
 	It("listImage should get exactly 3 repoTags in the result image [Conformance]", func() {
-		// different tags refer to the same image
-		testImageList := []string{
-			"gcr.io/cri-tools/test-image-tags:1",
-			"gcr.io/cri-tools/test-image-tags:2",
-			"gcr.io/cri-tools/test-image-tags:3",
-		}
-
 		// Make sure test image does not exist.
-		removeImageList(c, testImageList)
-		ids := pullImageList(c, testImageList)
+		removeImageList(c, testDifferentTagSameImageList)
+		ids := pullImageList(c, testDifferentTagSameImageList)
 		ids = removeDuplicates(ids)
 		Expect(len(ids)).To(Equal(1), "Only 1 image id should be returned")
 
-		defer removeImageList(c, testImageList)
+		defer removeImageList(c, testDifferentTagSameImageList)
 
 		images := framework.ListImage(c, &runtimeapi.ImageFilter{})
 
-		sort.Strings(testImageList)
+		sort.Strings(testDifferentTagSameImageList)
 		for _, img := range images {
 			if img.Id == ids[0] {
 				sort.Strings(img.RepoTags)
-				Expect(img.RepoTags).To(Equal(testImageList), "Should have 3 repoTags in single image")
+				Expect(img.RepoTags).To(Equal(testDifferentTagSameImageList), "Should have 3 repoTags in single image")
 				break
 			}
 		}
