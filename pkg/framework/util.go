@@ -59,8 +59,7 @@ var (
 
 	// DefaultLcowPodLabels default pod labels for Linux containers on Windows
 	DefaultLcowPodLabels = map[string]string{
-		"sandbox-platform":  "linux/amd64",
-		"sandbox-isolation": "process",
+		"sandbox-platform": "linux/amd64",
 	}
 
 	// DefaultWindowsPodLabels default pod labels for Windows
