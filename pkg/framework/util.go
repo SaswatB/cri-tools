@@ -273,7 +273,7 @@ func CreateContainerWithError(rc internalapi.RuntimeService, ic internalapi.Imag
 
 	status := ImageStatus(ic, imageName)
 	if status == nil {
-		PullPublicImage(ic, imageName)
+		PullPublicImage(ic, imageName, podConfig)
 	}
 
 	By("Create container.")
@@ -308,7 +308,7 @@ func ListImage(c internalapi.ImageManagerService, filter *runtimeapi.ImageFilter
 }
 
 // PullPublicImage pulls the public image named imageName.
-func PullPublicImage(c internalapi.ImageManagerService, imageName string) string {
+func PullPublicImage(c internalapi.ImageManagerService, imageName string, podConfig *runtimeapi.PodSandboxConfig) string {
 	if !strings.Contains(imageName, ":") {
 		imageName = imageName + ":latest"
 		Logf("Use latest as default image tag.")
@@ -318,7 +318,7 @@ func PullPublicImage(c internalapi.ImageManagerService, imageName string) string
 	imageSpec := &runtimeapi.ImageSpec{
 		Image: imageName,
 	}
-	id, err := c.PullImage(imageSpec, nil)
+	id, err := c.PullImage(imageSpec, nil, podConfig)
 	ExpectNoError(err, "failed to pull image: %v", err)
 	return id
 }

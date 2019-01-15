@@ -66,6 +66,9 @@ var (
 	// image list where different tags refer to the same image
 	testDifferentTagSameImageList []string
 
+	// pod sandbox to use when pulling images
+	testImagePodSandbox *runtimeapi.PodSandboxConfig
+
 	// Linux defaults
 	testLinuxDifferentTagDifferentImageList = []string{
 		"gcr.io/cri-tools/test-image-1:latest",
@@ -108,6 +111,9 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 			testDifferentTagDifferentImageList = testWindowsDifferentTagDifferentImageList
 			testDifferentTagSameImageList = testWindowsDifferentTagSameImageList
 		}
+		testImagePodSandbox = &runtimeapi.PodSandboxConfig{
+			Labels: framework.DefaultPodLabels,
+		}
 	})
 
 	var c internalapi.ImageManagerService
@@ -117,19 +123,19 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 	})
 
 	It("public image with tag should be pulled and removed [Conformance]", func() {
-		testPullPublicImage(c, testImageWithTag, func(s *runtimeapi.Image) {
+		testPullPublicImage(c, testImageWithTag, testImagePodSandbox, func(s *runtimeapi.Image) {
 			Expect(s.RepoTags).To(Equal([]string{testImageWithTag}))
 		})
 	})
 
 	It("public image without tag should be pulled and removed [Conformance]", func() {
-		testPullPublicImage(c, testImageWithoutTag, func(s *runtimeapi.Image) {
+		testPullPublicImage(c, testImageWithoutTag, testImagePodSandbox, func(s *runtimeapi.Image) {
 			Expect(s.RepoTags).To(Equal([]string{testImageWithoutTag + ":latest"}))
 		})
 	})
 
 	It("public image with digest should be pulled and removed [Conformance]", func() {
-		testPullPublicImage(c, testImageWithDigest, func(s *runtimeapi.Image) {
+		testPullPublicImage(c, testImageWithDigest, testImagePodSandbox, func(s *runtimeapi.Image) {
 			Expect(s.RepoTags).To(BeEmpty())
 			Expect(s.RepoDigests).To(Equal([]string{testImageWithDigest}))
 		})
@@ -168,7 +174,7 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 					username:    imageUserUsernameGroup,
 				},
 			} {
-				framework.PullPublicImage(c, item.image)
+				framework.PullPublicImage(c, item.image, testImagePodSandbox)
 				defer removeImage(c, item.image)
 
 				status := framework.ImageStatus(c, item.image)
@@ -181,7 +187,7 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 	It("listImage should get exactly 3 image in the result list [Conformance]", func() {
 		// Make sure test image does not exist.
 		removeImageList(c, testDifferentTagDifferentImageList)
-		ids := pullImageList(c, testDifferentTagDifferentImageList)
+		ids := pullImageList(c, testDifferentTagDifferentImageList, testImagePodSandbox)
 		ids = removeDuplicates(ids)
 		Expect(len(ids)).To(Equal(3), "3 image ids should be returned")
 
@@ -203,7 +209,7 @@ var _ = framework.KubeDescribe("Image Manager", func() {
 	It("listImage should get exactly 3 repoTags in the result image [Conformance]", func() {
 		// Make sure test image does not exist.
 		removeImageList(c, testDifferentTagSameImageList)
-		ids := pullImageList(c, testDifferentTagSameImageList)
+		ids := pullImageList(c, testDifferentTagSameImageList, testImagePodSandbox)
 		ids = removeDuplicates(ids)
 		Expect(len(ids)).To(Equal(1), "Only 1 image id should be returned")
 
@@ -233,11 +239,11 @@ func testRemoveImage(c internalapi.ImageManagerService, imageName string) {
 }
 
 // testPullPublicImage pulls the image named imageName, make sure it success and remove the image.
-func testPullPublicImage(c internalapi.ImageManagerService, imageName string, statusCheck func(*runtimeapi.Image)) {
+func testPullPublicImage(c internalapi.ImageManagerService, imageName string, podConfig *runtimeapi.PodSandboxConfig, statusCheck func(*runtimeapi.Image)) {
 	// Make sure image does not exist before testing.
 	removeImage(c, imageName)
 
-	framework.PullPublicImage(c, imageName)
+	framework.PullPublicImage(c, imageName, podConfig)
 
 	By("Check image list to make sure pulling image success : " + imageName)
 	status := framework.ImageStatus(c, imageName)
@@ -252,10 +258,10 @@ func testPullPublicImage(c internalapi.ImageManagerService, imageName string, st
 }
 
 // pullImageList pulls the images listed in the imageList.
-func pullImageList(c internalapi.ImageManagerService, imageList []string) []string {
+func pullImageList(c internalapi.ImageManagerService, imageList []string, podConfig *runtimeapi.PodSandboxConfig) []string {
 	var ids []string
 	for _, imageName := range imageList {
-		ids = append(ids, framework.PullPublicImage(c, imageName))
+		ids = append(ids, framework.PullPublicImage(c, imageName, podConfig))
 	}
 	return ids
 }

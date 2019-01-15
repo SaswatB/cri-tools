@@ -1108,7 +1108,7 @@ func createContainerWithExpectation(rc internalapi.RuntimeService,
 	}
 	status := framework.ImageStatus(ic, imageName)
 	if status == nil {
-		framework.PullPublicImage(ic, imageName)
+		framework.PullPublicImage(ic, imageName, nil)
 	}
 	By("Create container.")
 	containerID, err := rc.CreateContainer(podID, config, podConfig)
