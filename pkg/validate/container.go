@@ -57,6 +57,7 @@ var (
 	logDefaultCmd     []string
 	loopLogDefaultCmd []string
 	echoHelloOutput   string
+	checkPathCmd      func(string) []string
 
 	// Linux defaults
 	echoHelloLinuxCmd      = []string{"echo", "hello"}
@@ -67,6 +68,7 @@ var (
 	logDefaultLinuxCmd     = []string{"echo", defaultLog}
 	loopLogDefaultLinuxCmd = []string{"sh", "-c", "while true; do echo " + defaultLog + "; sleep 1; done"}
 	echoHelloLinuxOutput   = "hello\n"
+	checkPathLinuxCmd      = func(path string) []string { return []string{"ls", "-A", path} }
 
 	// Windows defaults
 	echoHelloWindowsCmd      = []string{"powershell", "-c", "echo hello"}
@@ -74,9 +76,10 @@ var (
 	checkSleepWindowsCmd     = []string{"powershell", "-c", "tasklist powershell | findstr sleep"}
 	shellWindowsCmd          = []string{"cmd", "/Q"}
 	pauseWindowsCmd          = []string{"powershell", "-c", "ping -t localhost"}
-	logDefaultWindowsCmd     = []string{"powershell", "/c", "echo '" + defaultLog + "'"}
-	loopLogDefaultWindowsCmd = []string{"powershell", "/c", "while($true) { echo '" + defaultLog + "'; sleep 1; }"}
+	logDefaultWindowsCmd     = []string{"powershell", "-c", "echo '" + defaultLog + "'"}
+	loopLogDefaultWindowsCmd = []string{"powershell", "-c", "while($true) { echo '" + defaultLog + "'; sleep 1; }"}
 	echoHelloWindowsOutput   = "hello\r\n"
+	checkPathWindowsCmd      = func(path string) []string { return []string{"powershell", "-c", "ls", path} }
 )
 
 // logMessage is the internal log type.
@@ -99,6 +102,7 @@ var _ = framework.KubeDescribe("Container", func() {
 			logDefaultCmd = logDefaultLinuxCmd
 			loopLogDefaultCmd = loopLogDefaultLinuxCmd
 			echoHelloOutput = echoHelloLinuxOutput
+			checkPathCmd = checkPathLinuxCmd
 		} else {
 			echoHelloCmd = echoHelloWindowsCmd
 			sleepCmd = sleepWindowsCmd
@@ -108,6 +112,7 @@ var _ = framework.KubeDescribe("Container", func() {
 			logDefaultCmd = logDefaultWindowsCmd
 			loopLogDefaultCmd = loopLogDefaultWindowsCmd
 			echoHelloOutput = echoHelloWindowsOutput
+			checkPathCmd = checkPathWindowsCmd
 		}
 	})
 
@@ -230,8 +235,7 @@ var _ = framework.KubeDescribe("Container", func() {
 			testStartContainer(rc, containerID)
 
 			By("check whether 'hostPath' contains file or dir in container")
-			command := []string{"ls", "-A", hostPath}
-			output := execSyncContainer(rc, containerID, command)
+			output := execSyncContainer(rc, containerID, checkPathCmd(hostPath))
 			Expect(len(output)).NotTo(BeZero(), "len(output) should not be zero.")
 		})
 
@@ -251,8 +255,7 @@ var _ = framework.KubeDescribe("Container", func() {
 			testStartContainer(rc, containerID)
 
 			By("check whether 'symlink' contains file or dir in container")
-			command := []string{"ls", "-A", symlinkPath}
-			output := execSyncContainer(rc, containerID, command)
+			output := execSyncContainer(rc, containerID, checkPathCmd(symlinkPath))
 			Expect(len(output)).NotTo(BeZero(), "len(output) should not be zero.")
 		})
 
@@ -448,7 +451,7 @@ func verifyExecSyncOutput(c internalapi.RuntimeService, containerID string, comm
 	By("verify execSync output")
 	stdout := execSyncContainer(c, containerID, command)
 	Expect(stdout).To(Equal(expectedLogMessage), "The stdout output of execSync should be %s", expectedLogMessage)
-	framework.Logf("verfiy Execsync output succeed")
+	framework.Logf("verify Execsync output succeed")
 }
 
 // createHostPath creates the hostPath and flagFile for volume.
