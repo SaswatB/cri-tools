@@ -41,8 +41,7 @@ type TestContextType struct {
 	Number int
 
 	// Test configuration.
-	IsLcow   bool
-	IsHyperV bool
+	IsLcow bool
 }
 
 // TestContext is a test context.
@@ -75,9 +74,7 @@ func RegisterFlags() {
 
 	if runtime.GOOS == "windows" {
 		flag.BoolVar(&TestContext.IsLcow, "lcow", false, "Run Linux container on Windows tests instead of Windows container tests")
-		flag.BoolVar(&TestContext.IsHyperV, "hyperv", false, "Run Windows container tests under HyperV isolation")
 	} else {
 		TestContext.IsLcow = false
-		TestContext.IsHyperV = false
 	}
 }

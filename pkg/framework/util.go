@@ -63,16 +63,7 @@ var (
 	}
 
 	// DefaultWindowsPodLabels default pod labels for Windows
-	DefaultWindowsPodLabels = map[string]string{
-		"sandbox-platform":  "windows/amd64",
-		"sandbox-isolation": "process",
-	}
-
-	// DefaultWindowsPodLabels default pod labels for Windows
-	DefaultHyperVPodLabels = map[string]string{
-		"sandbox-platform":  "windows/amd64",
-		"sandbox-isolation": "hyperv",
-	}
+	DefaultWindowsPodLabels = map[string]string{}
 
 	// DefaultWindowsContainerCommand default container command for Windows
 	DefaultWindowsContainerCommand = []string{"cmd", "/c", "ping -t localhost"}
@@ -112,10 +103,6 @@ var _ = BeforeSuite(func() {
 		DefaultPodLabels = DefaultWindowsPodLabels
 		DefaultContainerImage = DefaultWindowsContainerImage
 		DefaultContainerCommand = DefaultWindowsContainerCommand
-
-		if TestContext.IsHyperV {
-			DefaultPodLabels = DefaultHyperVPodLabels
-		}
 	}
 
 	for _, callback := range beforeSuiteCallbacks {
