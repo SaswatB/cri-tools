@@ -206,7 +206,6 @@ func createPodSandboxWithPortMapping(c internalapi.RuntimeService, portMappings 
 // checkDNSConfig checks the content of /etc/resolv.conf.
 func checkDNSConfig(c internalapi.RuntimeService, containerID string, expectedContent []string) {
 	By("get the current dns config via execSync")
-	time.Sleep(100 * time.Second)
 	stdout, stderr, err := c.ExecSync(containerID, getDNSConfigCmd, time.Duration(defaultExecSyncTimeout)*time.Second)
 	framework.ExpectNoError(err, "failed to execSync in container %q", containerID)
 	for _, content := range expectedContent {
