@@ -101,9 +101,9 @@ const (
 	testLinuxImageWithDigest = "gcr.io/cri-tools/test-image-digest@sha256:9179135b4b4cc5a8721e09379244807553c318d92fa3111a65133241551ca343"
 
 	// Windows defaults
-	testWindowsImageWithoutTag = "docker.io/saswatbmsft/win-test-image-latest"
-	testWindowsImageWithTag    = "docker.io/saswatbmsft/win-test-image-tag:test"
-	testWindowsImageWithDigest = "docker.io/saswatbmsft/win-test-image-digest@sha256:05c5e07eab041551e466d6e33a0a5649a23a929cd236391b2835ec79dc245090"
+	testWindowsImageWithoutTag = "gcr.io/cri-tools/win-test-image-latest"
+	testWindowsImageWithTag    = "gcr.io/cri-tools/win-test-image-tag:test"
+	testWindowsImageWithDigest = "gcr.io/cri-tools/win-test-image-digest@sha256:05c5e07eab041551e466d6e33a0a5649a23a929cd236391b2835ec79dc245090"
 )
 
 var (
@@ -139,14 +139,14 @@ var (
 
 	// Windows defaults
 	testWindowsDifferentTagDifferentImageList = []string{
-		"docker.io/saswatbmsft/win-test-image-1:latest",
-		"docker.io/saswatbmsft/win-test-image-2:latest",
-		"docker.io/saswatbmsft/win-test-image-3:latest",
+		"gcr.io/cri-tools/win-test-image-1:latest",
+		"gcr.io/cri-tools/win-test-image-2:latest",
+		"gcr.io/cri-tools/win-test-image-3:latest",
 	}
 	testWindowsDifferentTagSameImageList = []string{
-		"docker.io/saswatbmsft/win-test-image-tags:1",
-		"docker.io/saswatbmsft/win-test-image-tags:2",
-		"docker.io/saswatbmsft/win-test-image-tags:3",
+		"gcr.io/cri-tools/win-test-image-tags:1",
+		"gcr.io/cri-tools/win-test-image-tags:2",
+		"gcr.io/cri-tools/win-test-image-tags:3",
 	}
 )
 
