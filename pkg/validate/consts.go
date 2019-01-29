@@ -37,14 +37,14 @@ var (
 	checkPathCmd      func(string) []string
 
 	// Linux defaults
-	echoHelloLinuxCmd      = []string{"echo", "hello"}
+	echoHelloLinuxCmd      = []string{"echo", "-n", "hello"}
 	sleepLinuxCmd          = []string{"sleep", "4321"}
 	checkSleepLinuxCmd     = []string{"sh", "-c", "pgrep sleep || true"}
 	shellLinuxCmd          = []string{"/bin/sh"}
 	pauseLinuxCmd          = []string{"sh", "-c", "top"}
 	logDefaultLinuxCmd     = []string{"echo", defaultLog}
 	loopLogDefaultLinuxCmd = []string{"sh", "-c", "while true; do echo " + defaultLog + "; sleep 1; done"}
-	echoHelloLinuxOutput   = "hello\n"
+	echoHelloLinuxOutput   = "hello"
 	checkPathLinuxCmd      = func(path string) []string { return []string{"ls", "-A", path} }
 
 	// Windows defaults
@@ -224,7 +224,7 @@ const (
 	defaultStreamServerScheme  string = "http"
 
 	// Linux defaults
-	attachEchoHelloLinuxOutput = "hello\n"
+	attachEchoHelloLinuxOutput = "hello"
 
 	// Windows defaults
 	attachEchoHelloWindowsOutput = "hello\r\n\r\nC:\\>"
