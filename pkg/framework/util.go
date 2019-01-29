@@ -111,8 +111,9 @@ var _ = BeforeSuite(func() {
 })
 
 // AddBeforeSuiteCallback adds a callback to run during BeforeSuite
-func AddBeforeSuiteCallback(callback func()) {
+func AddBeforeSuiteCallback(callback func()) bool {
 	beforeSuiteCallbacks = append(beforeSuiteCallbacks, callback)
+	return true
 }
 
 // LoadCRIClient creates a InternalAPIClient.

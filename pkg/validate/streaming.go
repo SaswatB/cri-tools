@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 
@@ -39,31 +38,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	defaultStreamServerAddress string = "127.0.0.1:10250"
-	defaultStreamServerScheme  string = "http"
-
-	// Linux defaults
-	attachEchoHelloLinuxOutput = "hello\n"
-
-	// Windows defaults
-	attachEchoHelloWindowsOutput = "hello\r\n\r\nC:\\>"
-)
-
-var (
-	attachEchoHelloOutput string
-)
-
 var _ = framework.KubeDescribe("Streaming", func() {
 	f := framework.NewDefaultCRIFramework()
-
-	framework.AddBeforeSuiteCallback(func() {
-		if runtime.GOOS != "windows" || framework.TestContext.IsLcow {
-			attachEchoHelloOutput = attachEchoHelloLinuxOutput
-		} else {
-			attachEchoHelloOutput = attachEchoHelloWindowsOutput
-		}
-	})
 
 	var rc internalapi.RuntimeService
 	var ic internalapi.ImageManagerService
